@@ -6,71 +6,47 @@ import Quickshell.Wayland
 import ".."
 import "../utils" as Utils
 
-/* NOTE:
-*  This entire module is quite a mess, and is likely going to get a complete re-write.
-*  I'm experimenting with creating the entire window frame/designs with SVG in order to
-*  skip the need of creating everything out of rectangles and borders.
-*
-*/
 PopupWindow {
     id: root
 
     property int menuWidth: 0
-    property int popupWidth: 600
+    property int popupWidth: 280
     property int screenHeight: 0
     property var currentApps: []
     property var closeCallback: function () {}
 
-    // Once again, I must mention that these values are confusing but since I want to
-    // capture focus immediately when the app launcher is opened, without the user having
-    // to move their mouse cursor to it; the mess is necessary.
     anchor.window: taskbar
-    anchor.rect.x: Screen.width / 2 - menuWidth / 2
+    anchor.rect.x: menuWidth
     anchor.rect.y: parentWindow.implicitHeight
-    implicitWidth: taskbar.width
-    implicitHeight: screenHeight - parentWindow.implicitHeight - 4
+    implicitWidth: popupWidth
+    implicitHeight: 300
     color: "transparent"
 
-    // This is quite hacky, the reason this exists is so the search bar gains immediate focus
-    // when you open the AppLauncher.
-    MouseArea {
-        anchors.fill: parent
-        onClicked: {
-            root.closeCallback();
-        }
-    }
     Rectangle {
         id: frame
         opacity: 0
-        //anchors.fill: parent
-        anchors.horizontalCenter: parent.horizontalCenter
-        implicitHeight: 350
-        implicitWidth: root.popupWidth
+        anchors.fill: parent
         color: Config.colors.base
         layer.enabled: true
 
         property int topOffset: 20
 
         PopupWindowFrame {
-            id: startMenuFrame
-            windowTitle: "Search"
-            windowTitleIcon: "\ue8b6"
-            windowTitleDecorationWidth: 190
+            windowTitle: "Programs"
+            windowTitleIcon: ""
+            windowTitleDecorationWidth: 80
             Item {
                 id: content
-                anchors.fill: startMenuFrame
+                anchors.fill: parent
                 anchors.margins: 8
-                anchors.topMargin: frame.topOffset + 20
+                anchors.topMargin: frame.topOffset + 12
                 clip: true
 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 8
-                    anchors.rightMargin: 8
                     Rectangle {
-                        Layout.alignment: Qt.AlignTop
                         Layout.fillWidth: true
-                        implicitHeight: 40
+                        implicitHeight: 36
                         color: Config.colors.highlight
                         border.color: Config.colors.outline
                         border.width: 1
@@ -80,7 +56,7 @@ PopupWindow {
                             width: parent.width
                             anchors.centerIn: parent
                             text: ""
-                            font.pixelSize: 16
+                            font.pixelSize: 14
                             font.family: fontMonaco.name
                             color: Config.colors.text
                             selectionColor: Config.colors.shadow
@@ -91,17 +67,12 @@ PopupWindow {
                             verticalAlignment: Text.AlignVCenter
                             focus: true
 
-                            background: Rectangle {
-                                color: "transparent"
-                            }
+                            background: Rectangle { color: "transparent" }
 
-                            Keys.onEscapePressed: {
-                                root.closeCallback();
-                            }
+                            Keys.onEscapePressed: root.closeCallback()
 
-                            Component.onCompleted: {
-                                searchInput.forceActiveFocus();
-                            }
+                            Component.onCompleted: searchInput.forceActiveFocus()
+
                             onAccepted: {
                                 if (root.currentApps.length == 1) {
                                     root.currentApps[0].execute();
@@ -110,29 +81,12 @@ PopupWindow {
                             }
                             onTextChanged: {
                                 root.currentApps = Utils.AppSearch.fuzzyQuery(searchInput.text);
-                                //console.log(Utils.AppSearch.fuzzyQuery(searchInput.text)[0].name);
-                            }
-                        }
-                        Rectangle {
-                            implicitHeight: 40
-                            implicitWidth: 40
-                            Layout.alignment: Qt.AlignLeft
-                            color: Config.colors.base
-                            border.color: Config.colors.outline
-                            border.width: 1
-                            Text {
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                                anchors.fill: parent
-                                font.family: iconFont.name
-                                font.pixelSize: 24
-                                text: "\ue8b6"
                             }
                         }
                     }
                     Rectangle {
-                        implicitWidth: parent.width
-                        implicitHeight: parent.height - 60
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
                         color: "transparent"
                         border.color: Config.colors.outline
                         border.width: 1
@@ -141,24 +95,21 @@ PopupWindow {
                         ListView {
                             id: appsView
                             model: root.currentApps
-
                             anchors.fill: parent
                             anchors.margins: 6
                             anchors.bottomMargin: 1
-
                             flickableDirection: Flickable.VerticalFlick
                             boundsBehavior: Flickable.DragOverBounds
                             maximumFlickVelocity: 3500
                             clip: true
-
-                            spacing: 8
+                            spacing: 4
 
                             delegate: Item {
                                 width: parent.width
-                                height: 40
+                                height: 32
                                 Button {
                                     width: parent.width
-                                    height: 40
+                                    height: 32
                                     opacity: mouse.hovered ? 0.75 : 1
                                     background: Rectangle {
                                         anchors.fill: parent
@@ -169,24 +120,14 @@ PopupWindow {
                                         modelData.execute();
                                         root.closeCallback();
                                     }
-                                    RowLayout {
+                                    Text {
                                         anchors.fill: parent
-                                        spacing: 0
-                                        property var iconPath: Utils.AppSearch.getIcon(modelData.icon)
-                                        Image {
-                                            Layout.leftMargin: 8
-                                            asynchronous: true
-                                            Layout.maximumWidth: 24
-                                            Layout.maximumHeight: 24
-                                            antialiasing: true
-                                            source: parent.iconPath
-                                        }
-                                        Text {
-                                            Layout.fillWidth: true
-                                            Layout.leftMargin: 8
-                                            Layout.alignment: Qt.AlignLeft
-                                            text: modelData.name
-                                        }
+                                        leftPadding: 8
+                                        verticalAlignment: Text.AlignVCenter
+                                        font.family: fontMonaco.name
+                                        font.pixelSize: Config.settings.bar.fontSize
+                                        color: Config.colors.text
+                                        text: modelData.name
                                     }
                                     HoverHandler {
                                         id: mouse
@@ -196,7 +137,7 @@ PopupWindow {
                                 }
                             }
 
-                            ScrollIndicator.horizontal: ScrollIndicator {
+                            ScrollIndicator.vertical: ScrollIndicator {
                                 active: appsView.moving
                             }
                         }
@@ -205,7 +146,6 @@ PopupWindow {
             }
         }
 
-        /*=== Animations ===*/
         OpacityAnimator {
             id: openAnimation
             target: frame
@@ -234,6 +174,5 @@ PopupWindow {
 
     function closeAppLauncher() {
         closeAnimation.start();
-        Config.currentPopup = Config.SystemPopup.None;
     }
 }

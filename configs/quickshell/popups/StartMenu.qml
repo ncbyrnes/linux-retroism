@@ -1,26 +1,57 @@
 import Quickshell
+import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Basic
-
 import ".."
 
-/* NOTE:
-*  This entire module is quite a mess, and is likely going to get a complete re-write.
-*  I'm experimenting with creating the entire window frame/designs with SVG in order to
-*  skip the need of creating everything out of rectangles and borders.
-*/
 PopupWindow {
     id: root
 
     property int menuWidth: 0
     property var closeCallback: function () {}
+    property var openAppLauncherCallback: function () {}
+    property var openThemeMenuCallback: function () {}
+
+    property string hostname: ""
+    property string username: ""
+    property int navIndex: -1
+    readonly property int navCount: 5
+
+    function activateItem(idx) {
+        switch (idx) {
+        case 0: root.openThemeMenuCallback(); break;
+        case 1: Quickshell.execDetached(Config.settings.execCommands.files); root.closeCallback(); break;
+        case 2: Quickshell.execDetached(Config.settings.execCommands.terminal); root.closeCallback(); break;
+        case 3: root.openAppLauncherCallback(); break;
+        case 4: root.closeCallback(); break;
+        }
+    }
+
     anchor.window: taskbar
     anchor.rect.x: menuWidth
     anchor.rect.y: parentWindow.implicitHeight
-    implicitWidth: 480
-    implicitHeight: 276
+    implicitWidth: 300
+    implicitHeight: 340
     color: "transparent"
+
+    Process {
+        command: ["hostname"]
+        running: true
+        stdout: SplitParser { onRead: line => root.hostname = line }
+    }
+
+    Process {
+        command: ["whoami"]
+        running: true
+        stdout: SplitParser { onRead: line => root.username = line }
+    }
+
+    Timer {
+        id: focusTimer
+        interval: 50
+        onTriggered: keyInput.forceActiveFocus()
+    }
 
     Rectangle {
         id: frame
@@ -32,370 +63,189 @@ PopupWindow {
         property int topOffset: 20
 
         PopupWindowFrame {
-            id: startMenuFrame
-            windowTitle: "Your Computer"
-            windowTitleIcon: "\ue30c"
-            windowTitleDecorationWidth: 150
+            windowTitle: root.hostname
+            windowTitleIcon: ""
+            windowTitleDecorationWidth: 70
+
             Item {
-                id: content
-                anchors.fill: startMenuFrame
-                anchors.margins: 18
+                anchors.fill: parent
+                anchors.margins: 8
                 anchors.topMargin: frame.topOffset + 18
 
-                ColumnLayout {
-                    spacing: 8
-                    RowLayout {
-                        spacing: 8
-                        implicitWidth: content.width
+                TextInput {
+                    id: keyInput
+                    focus: true
+                    opacity: 0
+                    width: 1; height: 1
 
-                        Item {
-                            implicitWidth: 150
-                            implicitHeight: 150
-                            Image {
-                                asynchronous: true
-                                anchors.fill: parent
-                                source: Config.settings.systemProfileImageSource
-                                fillMode: Image.PreserveAspectCrop
-                                clip: true
-                            }
+                    Keys.onDownPressed:  root.navIndex = (root.navIndex + 1) % root.navCount
+                    Keys.onUpPressed:    root.navIndex = (root.navIndex + root.navCount - 1) % root.navCount
+                    Keys.onReturnPressed: if (root.navIndex >= 0) root.activateItem(root.navIndex)
+                    Keys.onEscapePressed: root.closeCallback()
+                }
 
-                            Rectangle {
-                                anchors.fill: parent
-                                color: "transparent"
-                                border.color: Config.colors.outline
-                                border.width: 1
-                            }
-                        }
-                        Item {
-                            id: headerContent
+                RowLayout {
+                    anchors.fill: parent
+                    spacing: 0
+
+                    ColumnLayout {
+                        Layout.preferredWidth: root.implicitWidth * 0.33
+                        Layout.maximumWidth: root.implicitWidth * 0.33
+                        Layout.fillHeight: true
+                        spacing: 4
+
+                        Image {
                             Layout.fillWidth: true
-                            implicitHeight: 150
+                            Layout.preferredHeight: width
+                            fillMode: Image.PreserveAspectFit
+                            sourceSize.width: 80
+                            sourceSize.height: 80
+                            source: Config.settings.systemProfileImageSource
+
                             Rectangle {
                                 anchors.fill: parent
                                 color: "transparent"
                                 border.color: Config.colors.outline
                                 border.width: 1
                             }
-
-                            Item {
-                                anchors.fill: parent
-                                anchors.margins: 8
-                                ColumnLayout {
-                                    spacing: 8
-
-                                    RowLayout {
-                                        spacing: 8
-                                        Text {
-                                            font.family: iconFont.name
-                                            font.pixelSize: 16
-                                            text: "\ue161"
-                                            color: Config.colors.text
-                                        }
-                                        Text {
-                                            font.family: fontMonaco.name
-                                            font.pixelSize: 14
-                                            text: Config.settings.systemDetails.osName
-                                            color: Config.colors.text
-                                        }
-                                    }
-                                    RowLayout {
-                                        spacing: 8
-                                        Text {
-                                            font.family: iconFont.name
-                                            font.pixelSize: 16
-                                            text: "\ue394"
-                                            color: Config.colors.text
-                                        }
-                                        Text {
-                                            font.family: fontMonaco.name
-                                            font.pixelSize: 14
-                                            text: Config.settings.systemDetails.osVersion
-                                            color: Config.colors.text
-                                        }
-                                    }
-                                    RowLayout {
-                                        spacing: 8
-                                        Text {
-                                            font.family: iconFont.name
-                                            font.pixelSize: 16
-                                            text: "\uf7a3"
-                                            color: Config.colors.text
-                                        }
-                                        Text {
-                                            font.family: fontMonaco.name
-                                            font.pixelSize: 14
-                                            text: Config.settings.systemDetails.ram
-                                            color: Config.colors.text
-                                        }
-                                    }
-                                    RowLayout {
-                                        spacing: 8
-                                        Text {
-                                            font.family: iconFont.name
-                                            font.pixelSize: 16
-                                            text: "\ue322"
-                                            color: Config.colors.text
-                                        }
-                                        Text {
-                                            font.family: fontMonaco.name
-                                            font.pixelSize: 14
-                                            text: Config.settings.systemDetails.cpu
-                                            color: Config.colors.text
-                                        }
-                                    }
-                                    RowLayout {
-                                        spacing: 8
-                                        Text {
-                                            font.family: iconFont.name
-                                            font.pixelSize: 16
-                                            text: "\ue2ac"
-                                            color: Config.colors.text
-                                        }
-
-                                        Text {
-                                            font.family: fontMonaco.name
-                                            font.pixelSize: 14
-                                            text: Config.settings.systemDetails.gpu
-                                            color: Config.colors.text
-                                        }
-                                    }
-                                }
-                            }
                         }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: root.username
+                            color: Config.colors.text
+                            font.family: fontMonaco.name
+                            font.pixelSize: Config.settings.bar.fontSize
+                            horizontalAlignment: Text.AlignHCenter
+                            wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                        }
+
+                        Item { Layout.fillHeight: true }
                     }
-                    RowLayout {
-                        spacing: 8
-                        implicitWidth: content.width
 
-                        Item {
-                            implicitWidth: 150
-                            implicitHeight: 60
-                            Rectangle {
-                                anchors.fill: parent
-                                color: "transparent"
-                                border.color: Config.colors.outline
-                                border.width: 1
-                            }
-                        }
+                    Rectangle {
+                        Layout.preferredWidth: 1
+                        Layout.fillHeight: true
+                        color: Config.colors.outline
+                    }
 
-                        Item {
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        spacing: 0
+
+                        Button {
                             Layout.fillWidth: true
-                            implicitHeight: 60
-                            Layout.leftMargin: 1
-                            RowLayout {
-                                spacing: 14
-
-                                Button {
-                                    id: filesButton
-                                    implicitHeight: 60
-                                    implicitWidth: 60
-
-                                    onClicked: () => {
-                                        Quickshell.execDetached(Config.settings.execCommands.files);
-                                        root.closeCallback();
-                                    }
-
-                                    background: Rectangle {
-                                        anchors.fill: parent
-                                        color: Config.colors.outline
-                                        opacity: mouse0.hovered ? (0.2 + (filesButton.pressed ? 0.2 : 0.0)) : 0.1
-                                        border.width: 1
-                                    }
-                                    NewBorder {
-                                        commonBorderWidth: 2
-                                        commonBorder: false
-                                        lBorderwidth: 2
-                                        rBorderwidth: 2
-                                        tBorderwidth: 2
-                                        bBorderwidth: 2
-                                        zValue: -1
-                                        borderColor: Config.colors.shadow
-                                    }
-                                    NewBorder {
-                                        commonBorderWidth: 2
-                                        commonBorder: false
-                                        lBorderwidth: 2
-                                        rBorderwidth: 0
-                                        tBorderwidth: 2
-                                        bBorderwidth: 0
-                                        zValue: -1
-                                        opacity: 0.8
-                                        borderColor: Config.colors.highlight
-                                    }
-                                    Text {
-                                        anchors.centerIn: parent
-                                        font.family: iconFont.name
-                                        font.pixelSize: 48
-                                        opacity: 0.4
-                                        color: Config.colors.text
-                                        text: "\ue2c7"
-                                    }
-                                    HoverHandler {
-                                        id: mouse0
-                                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                                        cursorShape: Qt.PointingHandCursor
-                                    }
-                                }
-                                Button {
-                                    id: terminalButton
-                                    implicitHeight: 60
-                                    implicitWidth: 60
-
-                                    onClicked: () => {
-                                        Quickshell.execDetached(Config.settings.execCommands.terminal);
-                                        root.closeCallback();
-                                    }
-
-                                    background: Rectangle {
-                                        anchors.fill: parent
-                                        color: Config.colors.outline
-                                        opacity: mouse.hovered ? (0.2 + (terminalButton.pressed ? 0.2 : 0.0)) : 0.1
-                                        border.width: 1
-                                    }
-                                    NewBorder {
-                                        commonBorderWidth: 2
-                                        commonBorder: false
-                                        lBorderwidth: 2
-                                        rBorderwidth: 2
-                                        tBorderwidth: 2
-                                        bBorderwidth: 2
-                                        zValue: -1
-                                        borderColor: Config.colors.shadow
-                                    }
-                                    NewBorder {
-                                        commonBorderWidth: 2
-                                        commonBorder: false
-                                        lBorderwidth: 2
-                                        rBorderwidth: 0
-                                        tBorderwidth: 2
-                                        bBorderwidth: 0
-                                        zValue: -1
-                                        opacity: 0.8
-                                        borderColor: Config.colors.highlight
-                                    }
-                                    Text {
-                                        anchors.centerIn: parent
-                                        font.family: iconFont.name
-                                        font.pixelSize: 48
-                                        opacity: 0.4
-                                        color: Config.colors.text
-                                        text: "\ueb8e"
-                                    }
-                                    HoverHandler {
-                                        id: mouse
-                                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                                        cursorShape: Qt.PointingHandCursor
-                                    }
-                                }
-                                Button {
-                                    id: settingsButton
-                                    implicitHeight: 60
-                                    implicitWidth: 60
-
-                                    onClicked: () => {
-                                        Config.openSettingsWindow = true;
-                                        root.closeCallback();
-                                    }
-
-                                    background: Rectangle {
-                                        anchors.fill: parent
-                                        color: Config.colors.outline
-                                        opacity: mouse2.hovered ? (0.2 + (settingsButton.pressed ? 0.2 : 0.0)) : 0.1
-                                        border.width: 1
-                                    }
-                                    NewBorder {
-                                        commonBorderWidth: 2
-                                        commonBorder: false
-                                        lBorderwidth: 2
-                                        rBorderwidth: 2
-                                        tBorderwidth: 2
-                                        bBorderwidth: 2
-                                        zValue: -1
-                                        borderColor: Config.colors.shadow
-                                    }
-                                    NewBorder {
-                                        commonBorderWidth: 2
-                                        commonBorder: false
-                                        lBorderwidth: 2
-                                        rBorderwidth: 0
-                                        tBorderwidth: 2
-                                        bBorderwidth: 0
-                                        zValue: -1
-                                        opacity: 0.8
-                                        borderColor: Config.colors.highlight
-                                    }
-                                    Text {
-                                        anchors.centerIn: parent
-                                        font.family: iconFont.name
-                                        font.pixelSize: 48
-                                        opacity: 0.4
-                                        color: Config.colors.text
-                                        text: "\ue8b8"
-                                    }
-                                    HoverHandler {
-                                        id: mouse2
-                                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                                        cursorShape: Qt.PointingHandCursor
-                                    }
-                                }
-                                Button {
-                                    id: powerButton
-                                    implicitHeight: 60
-                                    implicitWidth: 60
-
-                                    onClicked: () => {
-                                        root.closeCallback();
-                                    }
-
-                                    background: Rectangle {
-                                        anchors.fill: parent
-                                        color: Config.colors.outline
-                                        opacity: mouse3.hovered ? (0.2 + (powerButton.pressed ? 0.2 : 0.0)) : 0.1
-                                        border.width: 1
-                                    }
-                                    NewBorder {
-                                        commonBorderWidth: 2
-                                        commonBorder: false
-                                        lBorderwidth: 2
-                                        rBorderwidth: 2
-                                        tBorderwidth: 2
-                                        bBorderwidth: 2
-                                        zValue: -1
-                                        borderColor: Config.colors.shadow
-                                    }
-                                    NewBorder {
-                                        commonBorderWidth: 2
-                                        commonBorder: false
-                                        lBorderwidth: 2
-                                        rBorderwidth: 0
-                                        tBorderwidth: 2
-                                        bBorderwidth: 0
-                                        zValue: -1
-                                        opacity: 0.8
-                                        borderColor: Config.colors.highlight
-                                    }
-                                    Text {
-                                        anchors.centerIn: parent
-                                        font.family: iconFont.name
-                                        font.pixelSize: 48
-                                        opacity: 0.4
-                                        color: Config.colors.text
-                                        text: "\uf418"
-                                    }
-                                    HoverHandler {
-                                        id: mouse3
-                                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                                        cursorShape: Qt.PointingHandCursor
-                                    }
-                                }
+                            implicitHeight: 36
+                            onClicked: root.openThemeMenuCallback()
+                            background: Rectangle {
+                                color: (appearanceHover.hovered || root.navIndex === 0) ? Config.colors.highlight : "transparent"
+                                border.color: "transparent"
                             }
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 8
+                                spacing: 8
+                                Text { font.family: iconFont.name; font.pixelSize: 20; color: Config.colors.text; text: "\ue3ae" }
+                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: Config.colors.text; text: "Appearance" }
+                            }
+                            HoverHandler { id: appearanceHover; acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad; cursorShape: Qt.PointingHandCursor }
                         }
+
+                        Button {
+                            Layout.fillWidth: true
+                            implicitHeight: 36
+                            onClicked: { Quickshell.execDetached(Config.settings.execCommands.files); root.closeCallback() }
+                            background: Rectangle {
+                                color: (filesHover.hovered || root.navIndex === 1) ? Config.colors.highlight : "transparent"
+                                border.color: "transparent"
+                            }
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 8
+                                spacing: 8
+                                Text { font.family: iconFont.name; font.pixelSize: 20; color: Config.colors.text; text: "\ue2c7" }
+                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: Config.colors.text; text: "Files" }
+                            }
+                            HoverHandler { id: filesHover; acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad; cursorShape: Qt.PointingHandCursor }
+                        }
+
+                        Button {
+                            Layout.fillWidth: true
+                            implicitHeight: 36
+                            onClicked: { Quickshell.execDetached(Config.settings.execCommands.terminal); root.closeCallback() }
+                            background: Rectangle {
+                                color: (terminalHover.hovered || root.navIndex === 2) ? Config.colors.highlight : "transparent"
+                                border.color: "transparent"
+                            }
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 8
+                                spacing: 8
+                                Text { font.family: iconFont.name; font.pixelSize: 20; color: Config.colors.text; text: "\ueb8e" }
+                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: Config.colors.text; text: "Terminal" }
+                            }
+                            HoverHandler { id: terminalHover; acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad; cursorShape: Qt.PointingHandCursor }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 1
+                            color: Config.colors.outline
+                            Layout.leftMargin: 4
+                            Layout.rightMargin: 4
+                        }
+
+                        Button {
+                            Layout.fillWidth: true
+                            implicitHeight: 36
+                            onClicked: root.openAppLauncherCallback()
+                            background: Rectangle {
+                                color: (programsHover.hovered || root.navIndex === 3) ? Config.colors.highlight : "transparent"
+                                border.color: "transparent"
+                            }
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 8
+                                spacing: 8
+                                Text { font.family: iconFont.name; font.pixelSize: 20; color: Config.colors.text; text: "\ue8b6" }
+                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: Config.colors.text; text: "Programs" }
+                            }
+                            HoverHandler { id: programsHover; acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad; cursorShape: Qt.PointingHandCursor }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 1
+                            color: Config.colors.outline
+                            Layout.leftMargin: 4
+                            Layout.rightMargin: 4
+                        }
+
+                        Button {
+                            Layout.fillWidth: true
+                            implicitHeight: 36
+                            onClicked: root.closeCallback()
+                            background: Rectangle {
+                                color: (shutdownHover.hovered || root.navIndex === 4) ? Config.colors.highlight : "transparent"
+                                border.color: "transparent"
+                            }
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 8
+                                spacing: 8
+                                Text { font.family: iconFont.name; font.pixelSize: 20; color: Config.colors.text; text: "\uf418" }
+                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: Config.colors.text; text: "Shut Down" }
+                            }
+                            HoverHandler { id: shutdownHover; acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad; cursorShape: Qt.PointingHandCursor }
+                        }
+
+                        Item { Layout.fillHeight: true }
                     }
                 }
             }
         }
 
-        /*=== Animations ===*/
         OpacityAnimator {
             id: openAnimation
             target: frame
@@ -417,6 +267,8 @@ PopupWindow {
 
     function openStartMenu() {
         root.visible = true;
+        root.navIndex = -1;
+        focusTimer.start();
         openAnimation.start();
     }
 

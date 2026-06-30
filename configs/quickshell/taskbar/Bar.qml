@@ -2,6 +2,8 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
 import QtQuick
+import QtQuick.Controls.Basic
+import QtQuick.Layouts
 
 import "../popups" as Popups
 import ".."
@@ -66,60 +68,34 @@ Scope {
                 }
                 /*=== ===================================== ===*/
 
-                /*=== Workspaces & Background for it ===*/
-                Item {
-                    id: test2
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.left: parent.left
-                    height: parent.height - 8
-
-                    // The margins are weird due to the additional outlines added to each button
-                    // that add depth, which is 1 pixel; thus we expand the width by 5 and not 4.
-                    anchors.leftMargin: 11
-                    width: workspaces.width + 5
-                    Rectangle {
-                        id: background2
-                        anchors.fill: test2
-
-                        anchors.bottomMargin: -2
-                        color: "transparent"
-                        Rectangle {
-                            anchors.fill: background2
-                            border.width: 0
-                            color: Config.colors.shadow
-                        }
-                        Rectangle {
-                            anchors.fill: background2
-                            color: "transparent"
-                            border.width: 1
-                            z: -5
-                            anchors.margins: -1
-                            anchors.bottomMargin: 1
-                        }
-                    }
-                    Workspaces {
-                        id: workspaces
-                        anchors.leftMargin: 2
-                        anchors.rightMargin: 0
-                    }
-                }
-                /*=== ============================== ===*/
 
                 /*=== StartMenu & Other popup Stuff ===*/
                 Popups.StartMenu {
                     id: startMenu
-                    menuWidth: workspaces.width + startmenuButton.width
+                    menuWidth: 0
                     closeCallback: taskbar.closeAllPopups
+                    openAppLauncherCallback: () => {
+                        startMenu.closeStartMenu();
+                        root.currentPopup = Config.SystemPopup.None;
+                        appLauncher.openAppLauncher();
+                        root.currentPopup = Config.SystemPopup.AppLauncher;
+                    }
+                    openThemeMenuCallback: () => {
+                        startMenu.closeStartMenu();
+                        root.currentPopup = Config.SystemPopup.None;
+                        themeMenu.openThemeMenu();
+                        root.currentPopup = Config.SystemPopup.ThemePicker;
+                    }
                 }
                 Popups.ThemeMenu {
                     id: themeMenu
-                    menuWidth: workspaces.width + startmenuButton.width + themeMenuButton.width
+                    menuWidth: 0
                 }
                 Popups.AppLauncher {
                     id: appLauncher
                     closeCallback: taskbar.closeAllPopups
-                    menuWidth: taskbar.width / 2
-                    popupWidth: 500
+                    menuWidth: 0
+                    popupWidth: 280
                     screenHeight: modelData.height
                 }
                 function closeAllPopups() {
@@ -137,12 +113,14 @@ Scope {
                     root.currentPopup = Config.SystemPopup.None;
                 }
 
-                TaskbarButton {
-                    id: startmenuButton
-                    isToggled: root.currentPopup == Config.SystemPopup.Startmenu ? true : false
+                Button {
+                    id: appLauncherButton
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
-                    anchors.leftMargin: workspaces.width + 20 + 4
+                    anchors.leftMargin: 11
+                    implicitHeight: 24
+                    implicitWidth: 46
+
                     onClicked: {
                         if (root.currentPopup == Config.SystemPopup.None) {
                             startMenu.openStartMenu();
@@ -152,50 +130,32 @@ Scope {
                             root.currentPopup = Config.SystemPopup.None;
                         }
                     }
-                }
-                TaskbarButton {
-                    id: themeMenuButton
-                    isToggled: root.currentPopup == Config.SystemPopup.ThemePicker ? true : false
-                    iconFontValue: "\ue3ae"
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.leftMargin: workspaces.width + 40 + 11
-                    onClicked: {
-                        if (root.currentPopup == Config.SystemPopup.None) {
-                            themeMenu.openThemeMenu();
-                            root.currentPopup = Config.SystemPopup.ThemePicker;
-                        } else {
-                            taskbar.closeAllPopups();
-                            root.currentPopup = Config.SystemPopup.None;
-                        }
+
+                    background: Rectangle {
+                        color: root.currentPopup == Config.SystemPopup.Startmenu ? Config.colors.shadow : "transparent"
+                        border.width: 1
+                        border.color: Config.colors.outline
                     }
-                }
-                TaskbarButton {
-                    id: appLauncherButton
-                    isToggled: root.currentPopup == Config.SystemPopup.AppLauncher ? true : false
-                    iconFontValue: "\ue8b6"
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.leftMargin: workspaces.width + 78
-                    onClicked: {
-                        if (root.currentPopup == Config.SystemPopup.None) {
-                            appLauncher.openAppLauncher();
-                            root.currentPopup = Config.SystemPopup.AppLauncher;
-                        } else {
-                            taskbar.closeAllPopups();
-                            root.currentPopup = Config.SystemPopup.None;
-                        }
+
+                    Text {
+                        anchors.centerIn: parent
+                        font.family: fontMonaco.name
+                        font.pixelSize: Config.settings.bar.fontSize
+                        text: "Start"
+                        color: Config.colors.outline
                     }
+
+                    HoverHandler { cursorShape: Qt.PointingHandCursor }
                 }
                 Scope {
-                    id: appLauncherIpc
+                    id: startMenuIpc
                     property string screenName: taskbar.screen.name
                     IpcHandler {
-                        target: "appLauncher_" + appLauncherIpc.screenName
-                        function toggleAppLauncher() {
+                        target: "startMenu_" + startMenuIpc.screenName
+                        function toggleStartMenu() {
                             if (root.currentPopup == Config.SystemPopup.None) {
-                                appLauncher.openAppLauncher();
-                                root.currentPopup = Config.SystemPopup.AppLauncher;
+                                startMenu.openStartMenu();
+                                root.currentPopup = Config.SystemPopup.Startmenu;
                             } else {
                                 taskbar.closeAllPopups();
                                 root.currentPopup = Config.SystemPopup.None;

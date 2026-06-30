@@ -2,3 +2,4 @@ module Popups
 StartMenu 1.0 StartMenu.qml
 PopupWindowFrame 1.0 PopupWindowFrame.qml
 AppLauncher 1.0 AppLauncher.qml
+ThemeMenu 1.0 ThemeMenu.qml
