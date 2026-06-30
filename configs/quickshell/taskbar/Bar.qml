@@ -174,7 +174,9 @@ Scope {
                     id: appLauncherButton
                     isToggled: root.currentPopup == Config.SystemPopup.AppLauncher ? true : false
                     iconFontValue: "\ue8b6"
-                    anchors.centerIn: parent
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.leftMargin: workspaces.width + 78
                     onClicked: {
                         if (root.currentPopup == Config.SystemPopup.None) {
                             appLauncher.openAppLauncher();

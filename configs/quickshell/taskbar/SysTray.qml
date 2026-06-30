@@ -90,6 +90,7 @@ RowLayout {
             }
         }
     }
+    BatteryWidget {}
     ClockWidget {
         id: clockWidget
     }

@@ -98,7 +98,7 @@ Singleton {
             property JsonObject settings: JsonObject {
                 property string version: "0.1"
                 property bool militaryTimeClockFormat: true
-                property string systemProfileImageSource: "/home/username/Pictures/system_profile_picture.png"
+                property string systemProfileImageSource: "/home/nichole/Pictures/pfp.png"
                 property string currentTheme: "default"
                 property bool setWallpaperToThemeWallpaper: true
                 property JsonObject execCommands: JsonObject {
