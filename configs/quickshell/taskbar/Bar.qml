@@ -16,6 +16,8 @@ Scope {
             id: root
             required property var modelData
             property int currentPopup: Config.SystemPopup.None
+            property int currentSubPopup: Config.SystemPopup.None
+            property int currentFlyout: Config.SystemPopup.None
 
             PanelWindow {
                 id: taskbar
@@ -24,7 +26,7 @@ Scope {
                 WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
 
                 anchors {
-                    top: true
+                    bottom: true
                     left: true
                     right: true
                 }
@@ -40,8 +42,8 @@ Scope {
                         commonBorder: false
                         lBorderwidth: 10
                         rBorderwidth: 1
-                        tBorderwidth: 10
-                        bBorderwidth: 1
+                        tBorderwidth: 1
+                        bBorderwidth: 10
                         borderColor: Config.colors.shadow
                     }
                     NewBorder {
@@ -49,8 +51,8 @@ Scope {
                         commonBorder: false
                         lBorderwidth: 10
                         rBorderwidth: 10
-                        tBorderwidth: 1
-                        bBorderwidth: 10
+                        tBorderwidth: 10
+                        bBorderwidth: 1
                         borderColor: Config.colors.highlight
                     }
 
@@ -73,42 +75,187 @@ Scope {
                 Popups.StartMenu {
                     id: startMenu
                     menuWidth: 0
+                    activeSubPopup: root.currentSubPopup
                     closeCallback: taskbar.closeAllPopups
                     openAppLauncherCallback: () => {
-                        startMenu.closeStartMenu();
-                        root.currentPopup = Config.SystemPopup.None;
+                        if (root.currentSubPopup == Config.SystemPopup.AppLauncher) {
+                            appLauncher.closeAppLauncher();
+                            root.currentSubPopup = Config.SystemPopup.None;
+                            return;
+                        }
+                        taskbar.closeSubPopups();
                         appLauncher.openAppLauncher();
-                        root.currentPopup = Config.SystemPopup.AppLauncher;
+                        root.currentSubPopup = Config.SystemPopup.AppLauncher;
                     }
                     openThemeMenuCallback: () => {
-                        startMenu.closeStartMenu();
-                        root.currentPopup = Config.SystemPopup.None;
-                        themeMenu.openThemeMenu();
-                        root.currentPopup = Config.SystemPopup.ThemePicker;
+                        if (root.currentSubPopup == Config.SystemPopup.Appearance) {
+                            appearanceMenu.closeAppearanceMenu();
+                            root.currentSubPopup = Config.SystemPopup.None;
+                            return;
+                        }
+                        taskbar.closeSubPopups();
+                        appearanceMenu.openAppearanceMenu();
+                        root.currentSubPopup = Config.SystemPopup.Appearance;
                     }
+                    openShutdownMenuCallback: () => {
+                        if (root.currentSubPopup == Config.SystemPopup.Shutdown) {
+                            shutdownMenu.closeShutdownMenu();
+                            root.currentSubPopup = Config.SystemPopup.None;
+                            return;
+                        }
+                        taskbar.closeSubPopups();
+                        shutdownMenu.openShutdownMenu();
+                        root.currentSubPopup = Config.SystemPopup.Shutdown;
+                    }
+                    openSystemSettingsMenuCallback: () => {
+                        if (root.currentSubPopup == Config.SystemPopup.SystemSettings) {
+                            systemSettingsMenu.closeSystemSettingsMenu();
+                            root.currentSubPopup = Config.SystemPopup.None;
+                            return;
+                        }
+                        taskbar.closeSubPopups();
+                        systemSettingsMenu.openSystemSettingsMenu();
+                        root.currentSubPopup = Config.SystemPopup.SystemSettings;
+                    }
+                    openNetworkMenuCallback: () => {
+                        if (root.currentSubPopup == Config.SystemPopup.Network) {
+                            networkMenu.closeNetworkMenu();
+                            root.currentSubPopup = Config.SystemPopup.None;
+                            return;
+                        }
+                        taskbar.closeSubPopups();
+                        networkMenu.openNetworkMenu();
+                        root.currentSubPopup = Config.SystemPopup.Network;
+                    }
+                    openAudioMenuCallback: () => {
+                        if (root.currentSubPopup == Config.SystemPopup.Audio) {
+                            audioMenu.closeAudioMenu();
+                            root.currentSubPopup = Config.SystemPopup.None;
+                            return;
+                        }
+                        taskbar.closeSubPopups();
+                        audioMenu.openAudioMenu();
+                        root.currentSubPopup = Config.SystemPopup.Audio;
+                    }
+                }
+                Popups.AppearanceMenu {
+                    id: appearanceMenu
+                    menuWidth: startMenu.implicitWidth + 4
+                    activeFlyout: root.currentFlyout
+                    anchor.rect.y: -(startMenu.implicitHeight - (startMenu.contentTop + 4 * startMenu.rowHeight) - appearanceMenu.implicitHeight)
+                    openThemesCallback: () => taskbar.openAppearanceFlyout(Config.SystemPopup.ThemePicker)
+                    openWallpaperCallback: () => taskbar.openAppearanceFlyout(Config.SystemPopup.Wallpaper)
+                    openThemeSettingsCallback: () => taskbar.openAppearanceFlyout(Config.SystemPopup.ThemeSettings)
                 }
                 Popups.ThemeMenu {
                     id: themeMenu
-                    menuWidth: 0
+                    menuWidth: startMenu.implicitWidth + appearanceMenu.implicitWidth + 4
+                    anchor.rect.y: 0
+                }
+                Popups.WallpaperMenu {
+                    id: wallpaperMenu
+                    menuWidth: startMenu.implicitWidth + appearanceMenu.implicitWidth + 4
+                    screenName: root.modelData.name
+                    anchor.rect.y: 0
+                }
+                Popups.ThemeSettingsMenu {
+                    id: themeSettingsMenu
+                    menuWidth: startMenu.implicitWidth + appearanceMenu.implicitWidth + 4
+                    anchor.rect.y: 0
                 }
                 Popups.AppLauncher {
                     id: appLauncher
                     closeCallback: taskbar.closeAllPopups
-                    menuWidth: 0
+                    menuWidth: startMenu.implicitWidth + 4
                     popupWidth: 280
                     screenHeight: modelData.height
+                    anchor.rect.y: 0
                 }
-                function closeAllPopups() {
-                    switch (root.currentPopup) {
-                    case Config.SystemPopup.Startmenu:
-                        startMenu.closeStartMenu();
-                        break;
+                Popups.ShutdownMenu {
+                    id: shutdownMenu
+                    closeAllCallback: taskbar.closeAllPopups
+                    menuWidth: startMenu.implicitWidth + 4
+                    anchor.rect.y: 0
+                }
+                Popups.SystemSettingsMenu {
+                    id: systemSettingsMenu
+                    menuWidth: startMenu.implicitWidth + 4
+                    anchor.rect.y: 0
+                }
+                Popups.NetworkMenu {
+                    id: networkMenu
+                    menuWidth: startMenu.implicitWidth + 4
+                    anchor.rect.y: 0
+                }
+                Popups.AudioMenu {
+                    id: audioMenu
+                    menuWidth: startMenu.implicitWidth + 4
+                    anchor.rect.y: 0
+                }
+                function closeAppearanceFlyout(flyout) {
+                    switch (flyout) {
                     case Config.SystemPopup.ThemePicker:
                         themeMenu.closeThemeMenu();
+                        break;
+                    case Config.SystemPopup.Wallpaper:
+                        wallpaperMenu.closeWallpaperMenu();
+                        break;
+                    case Config.SystemPopup.ThemeSettings:
+                        themeSettingsMenu.closeThemeSettingsMenu();
+                        break;
+                    }
+                }
+                function openAppearanceFlyout(flyout) {
+                    if (root.currentFlyout == flyout) {
+                        taskbar.closeAppearanceFlyout(flyout);
+                        root.currentFlyout = Config.SystemPopup.None;
+                        return;
+                    }
+                    taskbar.closeAppearanceFlyout(root.currentFlyout);
+                    switch (flyout) {
+                    case Config.SystemPopup.ThemePicker:
+                        themeMenu.openThemeMenu();
+                        break;
+                    case Config.SystemPopup.Wallpaper:
+                        wallpaperMenu.openWallpaperMenu();
+                        break;
+                    case Config.SystemPopup.ThemeSettings:
+                        themeSettingsMenu.openThemeSettingsMenu();
+                        break;
+                    }
+                    root.currentFlyout = flyout;
+                }
+                function closeSubPopups() {
+                    taskbar.closeAppearanceFlyout(root.currentFlyout);
+                    root.currentFlyout = Config.SystemPopup.None;
+
+                    switch (root.currentSubPopup) {
+                    case Config.SystemPopup.Appearance:
+                        appearanceMenu.closeAppearanceMenu();
                         break;
                     case Config.SystemPopup.AppLauncher:
                         appLauncher.closeAppLauncher();
                         break;
+                    case Config.SystemPopup.Shutdown:
+                        shutdownMenu.closeShutdownMenu();
+                        break;
+                    case Config.SystemPopup.SystemSettings:
+                        systemSettingsMenu.closeSystemSettingsMenu();
+                        break;
+                    case Config.SystemPopup.Network:
+                        networkMenu.closeNetworkMenu();
+                        break;
+                    case Config.SystemPopup.Audio:
+                        audioMenu.closeAudioMenu();
+                        break;
+                    }
+                    root.currentSubPopup = Config.SystemPopup.None;
+                }
+                function closeAllPopups() {
+                    taskbar.closeSubPopups();
+
+                    if (root.currentPopup == Config.SystemPopup.Startmenu) {
+                        startMenu.closeStartMenu();
                     }
                     root.currentPopup = Config.SystemPopup.None;
                 }
@@ -220,7 +367,7 @@ Scope {
                     right: true
                 }
 
-                visible: root.currentPopup != Config.SystemPopup.None ? true : false
+                visible: root.currentPopup != Config.SystemPopup.None || root.currentSubPopup != Config.SystemPopup.None || root.currentFlyout != Config.SystemPopup.None
 
                 exclusionMode: ExclusionMode.Ignore
 
@@ -228,7 +375,7 @@ Scope {
                     id: popupArea
                     width: Screen.width
                     height: Screen.height
-                    visible: root.currentPopup != Config.SystemPopup.None ? true : false
+                    visible: root.currentPopup != Config.SystemPopup.None || root.currentSubPopup != Config.SystemPopup.None || root.currentFlyout != Config.SystemPopup.None
                     onClicked: {
                         taskbar.closeAllPopups();
                     }

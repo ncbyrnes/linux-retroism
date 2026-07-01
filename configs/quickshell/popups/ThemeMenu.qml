@@ -16,7 +16,9 @@ PopupWindow {
     property int menuWidth: 0
     anchor.window: taskbar
     anchor.rect.x: menuWidth
-    anchor.rect.y: parentWindow.implicitHeight
+    anchor.rect.y: 0
+    anchor.edges: Edges.Top | Edges.Left
+    anchor.gravity: Edges.Top | Edges.Right
     implicitWidth: 600
     implicitHeight: 182
     color: "transparent"

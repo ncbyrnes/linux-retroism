@@ -12,25 +12,38 @@ PopupWindow {
     property var closeCallback: function () {}
     property var openAppLauncherCallback: function () {}
     property var openThemeMenuCallback: function () {}
+    property var openShutdownMenuCallback: function () {}
+    property var openSystemSettingsMenuCallback: function () {}
+    property var openNetworkMenuCallback: function () {}
+    property var openAudioMenuCallback: function () {}
 
     property string hostname: ""
     property string username: ""
     property int navIndex: -1
-    readonly property int navCount: 5
+    readonly property int navCount: 8
+    property int activeSubPopup: Config.SystemPopup.None
+
+    readonly property int contentTop: frame.topOffset + 18
+    readonly property int rowHeight: 36
 
     function activateItem(idx) {
         switch (idx) {
-        case 0: root.openThemeMenuCallback(); break;
+        case 0: root.openAppLauncherCallback(); break;
         case 1: Quickshell.execDetached(Config.settings.execCommands.files); root.closeCallback(); break;
         case 2: Quickshell.execDetached(Config.settings.execCommands.terminal); root.closeCallback(); break;
-        case 3: root.openAppLauncherCallback(); break;
-        case 4: root.closeCallback(); break;
+        case 3: root.openSystemSettingsMenuCallback(); break;
+        case 4: root.openThemeMenuCallback(); break;
+        case 5: root.openNetworkMenuCallback(); break;
+        case 6: root.openAudioMenuCallback(); break;
+        case 7: root.openShutdownMenuCallback(); break;
         }
     }
 
     anchor.window: taskbar
     anchor.rect.x: menuWidth
-    anchor.rect.y: parentWindow.implicitHeight
+    anchor.rect.y: 0
+    anchor.edges: Edges.Top | Edges.Left
+    anchor.gravity: Edges.Top | Edges.Right
     implicitWidth: 300
     implicitHeight: 340
     color: "transparent"
@@ -135,59 +148,145 @@ PopupWindow {
                         spacing: 0
 
                         Button {
+                            id: programsButton
                             Layout.fillWidth: true
                             implicitHeight: 36
-                            onClicked: root.openThemeMenuCallback()
+                            property bool isActive: programsHover.hovered || root.navIndex === 0 || root.activeSubPopup === Config.SystemPopup.AppLauncher
+                            onClicked: root.openAppLauncherCallback()
                             background: Rectangle {
-                                color: (appearanceHover.hovered || root.navIndex === 0) ? Config.colors.highlight : "transparent"
+                                color: programsButton.isActive ? Config.selectionColor : "transparent"
                                 border.color: "transparent"
                             }
                             RowLayout {
                                 anchors.fill: parent
                                 anchors.leftMargin: 8
                                 spacing: 8
-                                Text { font.family: iconFont.name; font.pixelSize: 20; color: Config.colors.text; text: "\ue3ae" }
-                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: Config.colors.text; text: "Appearance" }
+                                Text { font.family: iconFont.name; font.pixelSize: 20; color: programsButton.isActive ? Config.selectionTextColor : Config.colors.text; text: "\ue8b6" }
+                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: programsButton.isActive ? Config.selectionTextColor : Config.colors.text; text: "Programs" }
                             }
-                            HoverHandler { id: appearanceHover; acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad; cursorShape: Qt.PointingHandCursor }
+                            HoverHandler { id: programsHover; acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad; cursorShape: Qt.PointingHandCursor }
                         }
 
                         Button {
+                            id: filesButton
                             Layout.fillWidth: true
                             implicitHeight: 36
+                            property bool isActive: filesHover.hovered || root.navIndex === 1
                             onClicked: { Quickshell.execDetached(Config.settings.execCommands.files); root.closeCallback() }
                             background: Rectangle {
-                                color: (filesHover.hovered || root.navIndex === 1) ? Config.colors.highlight : "transparent"
+                                color: filesButton.isActive ? Config.selectionColor : "transparent"
                                 border.color: "transparent"
                             }
                             RowLayout {
                                 anchors.fill: parent
                                 anchors.leftMargin: 8
                                 spacing: 8
-                                Text { font.family: iconFont.name; font.pixelSize: 20; color: Config.colors.text; text: "\ue2c7" }
-                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: Config.colors.text; text: "Files" }
+                                Text { font.family: iconFont.name; font.pixelSize: 20; color: filesButton.isActive ? Config.selectionTextColor : Config.colors.text; text: "\ue2c7" }
+                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: filesButton.isActive ? Config.selectionTextColor : Config.colors.text; text: "Files" }
                             }
                             HoverHandler { id: filesHover; acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad; cursorShape: Qt.PointingHandCursor }
                         }
 
                         Button {
+                            id: terminalButton
                             Layout.fillWidth: true
                             implicitHeight: 36
+                            property bool isActive: terminalHover.hovered || root.navIndex === 2
                             onClicked: { Quickshell.execDetached(Config.settings.execCommands.terminal); root.closeCallback() }
                             background: Rectangle {
-                                color: (terminalHover.hovered || root.navIndex === 2) ? Config.colors.highlight : "transparent"
+                                color: terminalButton.isActive ? Config.selectionColor : "transparent"
                                 border.color: "transparent"
                             }
                             RowLayout {
                                 anchors.fill: parent
                                 anchors.leftMargin: 8
                                 spacing: 8
-                                Text { font.family: iconFont.name; font.pixelSize: 20; color: Config.colors.text; text: "\ueb8e" }
-                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: Config.colors.text; text: "Terminal" }
+                                Text { font.family: iconFont.name; font.pixelSize: 20; color: terminalButton.isActive ? Config.selectionTextColor : Config.colors.text; text: "\ueb8e" }
+                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: terminalButton.isActive ? Config.selectionTextColor : Config.colors.text; text: "Terminal" }
                             }
                             HoverHandler { id: terminalHover; acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad; cursorShape: Qt.PointingHandCursor }
                         }
 
+                        Button {
+                            id: settingsButton
+                            Layout.fillWidth: true
+                            implicitHeight: 36
+                            property bool isActive: settingsHover.hovered || root.navIndex === 3 || root.activeSubPopup === Config.SystemPopup.SystemSettings
+                            onClicked: root.openSystemSettingsMenuCallback()
+                            background: Rectangle {
+                                color: settingsButton.isActive ? Config.selectionColor : "transparent"
+                                border.color: "transparent"
+                            }
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 8
+                                spacing: 8
+                                Text { font.family: iconFont.name; font.pixelSize: 20; color: settingsButton.isActive ? Config.selectionTextColor : Config.colors.text; text: "" }
+                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: settingsButton.isActive ? Config.selectionTextColor : Config.colors.text; text: "Settings" }
+                            }
+                            HoverHandler { id: settingsHover; acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad; cursorShape: Qt.PointingHandCursor }
+                        }
+
+                        Button {
+                            id: appearanceButton
+                            Layout.fillWidth: true
+                            implicitHeight: 36
+                            property bool isActive: appearanceHover.hovered || root.navIndex === 4 || root.activeSubPopup === Config.SystemPopup.Appearance
+                            onClicked: root.openThemeMenuCallback()
+                            background: Rectangle {
+                                color: appearanceButton.isActive ? Config.selectionColor : "transparent"
+                                border.color: "transparent"
+                            }
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 8
+                                spacing: 8
+                                Text { font.family: iconFont.name; font.pixelSize: 20; color: appearanceButton.isActive ? Config.selectionTextColor : Config.colors.text; text: "\ue3ae" }
+                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: appearanceButton.isActive ? Config.selectionTextColor : Config.colors.text; text: "Appearance" }
+                            }
+                            HoverHandler { id: appearanceHover; acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad; cursorShape: Qt.PointingHandCursor }
+                        }
+
+                        Button {
+                            id: networkButton
+                            Layout.fillWidth: true
+                            implicitHeight: 36
+                            property bool isActive: networkHover.hovered || root.navIndex === 5 || root.activeSubPopup === Config.SystemPopup.Network
+                            onClicked: root.openNetworkMenuCallback()
+                            background: Rectangle {
+                                color: networkButton.isActive ? Config.selectionColor : "transparent"
+                                border.color: "transparent"
+                            }
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 8
+                                spacing: 8
+                                Text { font.family: iconFont.name; font.pixelSize: 20; color: networkButton.isActive ? Config.selectionTextColor : Config.colors.text; text: "" }
+                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: networkButton.isActive ? Config.selectionTextColor : Config.colors.text; text: "Network" }
+                            }
+                            HoverHandler { id: networkHover; acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad; cursorShape: Qt.PointingHandCursor }
+                        }
+
+                        Button {
+                            id: audioButton
+                            Layout.fillWidth: true
+                            implicitHeight: 36
+                            property bool isActive: audioHover.hovered || root.navIndex === 6 || root.activeSubPopup === Config.SystemPopup.Audio
+                            onClicked: root.openAudioMenuCallback()
+                            background: Rectangle {
+                                color: audioButton.isActive ? Config.selectionColor : "transparent"
+                                border.color: "transparent"
+                            }
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 8
+                                spacing: 8
+                                Text { font.family: iconFont.name; font.pixelSize: 20; color: audioButton.isActive ? Config.selectionTextColor : Config.colors.text; text: "" }
+                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: audioButton.isActive ? Config.selectionTextColor : Config.colors.text; text: "Audio" }
+                            }
+                            HoverHandler { id: audioHover; acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad; cursorShape: Qt.PointingHandCursor }
+                        }
+
                         Rectangle {
                             Layout.fillWidth: true
                             height: 1
@@ -197,45 +296,21 @@ PopupWindow {
                         }
 
                         Button {
+                            id: shutdownButton
                             Layout.fillWidth: true
                             implicitHeight: 36
-                            onClicked: root.openAppLauncherCallback()
+                            property bool isActive: shutdownHover.hovered || root.navIndex === 7 || root.activeSubPopup === Config.SystemPopup.Shutdown
+                            onClicked: root.openShutdownMenuCallback()
                             background: Rectangle {
-                                color: (programsHover.hovered || root.navIndex === 3) ? Config.colors.highlight : "transparent"
+                                color: shutdownButton.isActive ? Config.selectionColor : "transparent"
                                 border.color: "transparent"
                             }
                             RowLayout {
                                 anchors.fill: parent
                                 anchors.leftMargin: 8
                                 spacing: 8
-                                Text { font.family: iconFont.name; font.pixelSize: 20; color: Config.colors.text; text: "\ue8b6" }
-                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: Config.colors.text; text: "Programs" }
-                            }
-                            HoverHandler { id: programsHover; acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad; cursorShape: Qt.PointingHandCursor }
-                        }
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            height: 1
-                            color: Config.colors.outline
-                            Layout.leftMargin: 4
-                            Layout.rightMargin: 4
-                        }
-
-                        Button {
-                            Layout.fillWidth: true
-                            implicitHeight: 36
-                            onClicked: root.closeCallback()
-                            background: Rectangle {
-                                color: (shutdownHover.hovered || root.navIndex === 4) ? Config.colors.highlight : "transparent"
-                                border.color: "transparent"
-                            }
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 8
-                                spacing: 8
-                                Text { font.family: iconFont.name; font.pixelSize: 20; color: Config.colors.text; text: "\uf418" }
-                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: Config.colors.text; text: "Shut Down" }
+                                Text { font.family: iconFont.name; font.pixelSize: 20; color: shutdownButton.isActive ? Config.selectionTextColor : Config.colors.text; text: "\uf418" }
+                                Text { font.family: fontMonaco.name; font.pixelSize: Config.settings.bar.fontSize; color: shutdownButton.isActive ? Config.selectionTextColor : Config.colors.text; text: "Shut Down" }
                             }
                             HoverHandler { id: shutdownHover; acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad; cursorShape: Qt.PointingHandCursor }
                         }

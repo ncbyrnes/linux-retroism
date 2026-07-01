@@ -17,7 +17,9 @@ PopupWindow {
 
     anchor.window: taskbar
     anchor.rect.x: menuWidth
-    anchor.rect.y: parentWindow.implicitHeight
+    anchor.rect.y: 0
+    anchor.edges: Edges.Top | Edges.Left
+    anchor.gravity: Edges.Top | Edges.Right
     implicitWidth: popupWidth
     implicitHeight: 300
     color: "transparent"
@@ -59,7 +61,7 @@ PopupWindow {
                             font.pixelSize: 14
                             font.family: fontMonaco.name
                             color: Config.colors.text
-                            selectionColor: Config.colors.shadow
+                            selectionColor: Config.selectionColor
                             padding: 2
                             selectByMouse: true
                             cursorVisible: false

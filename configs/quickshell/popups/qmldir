@@ -3,3 +3,10 @@ StartMenu 1.0 StartMenu.qml
 PopupWindowFrame 1.0 PopupWindowFrame.qml
 AppLauncher 1.0 AppLauncher.qml
 ThemeMenu 1.0 ThemeMenu.qml
+AppearanceMenu 1.0 AppearanceMenu.qml
+WallpaperMenu 1.0 WallpaperMenu.qml
+ThemeSettingsMenu 1.0 ThemeSettingsMenu.qml
+ShutdownMenu 1.0 ShutdownMenu.qml
+SystemSettingsMenu 1.0 SystemSettingsMenu.qml
+NetworkMenu 1.0 NetworkMenu.qml
+AudioMenu 1.0 AudioMenu.qml

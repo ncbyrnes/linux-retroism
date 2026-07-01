@@ -50,10 +50,11 @@ RowLayout {
                 // Yes I know, this is a confusing way to get the position for the menu, but that's
                 // just how Qt is.
                 anchor.rect.x: taskbar.width - (sysTrayRow.width + clockWidget.width - trayItem.x)
-                anchor.rect.y: taskbar.height - 10
+                anchor.rect.y: 10
 
                 anchor.rect.height: trayItem.height
-                anchor.edges: Edges.Bottom
+                anchor.edges: Edges.Top | Edges.Left
+                anchor.gravity: Edges.Top | Edges.Right
             }
 
             IconImage {

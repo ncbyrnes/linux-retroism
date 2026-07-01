@@ -11,6 +11,9 @@ Singleton {
     // Simply add to this list in order to create your
     // own color schemes, they will automatically show up in the theme picker.
     property var colors: themes[themes[settings.currentTheme] == null ? 'default' : settings.currentTheme]
+
+    readonly property string selectionColor: settings.blueSelectionBox ? "#000080" : colors.shadow
+    readonly property string selectionTextColor: settings.blueSelectionBox ? "white" : colors.text
     property var themes: {
         "default": {
             "base": "#d8d8d8",
@@ -73,6 +76,13 @@ Singleton {
         Startmenu,
         ThemePicker,
         AppLauncher,
+        Appearance,
+        Wallpaper,
+        ThemeSettings,
+        Shutdown,
+        SystemSettings,
+        Network,
+        Audio,
         None
     }
 
@@ -101,6 +111,7 @@ Singleton {
                 property string systemProfileImageSource: "/home/nichole/Pictures/pfp.png"
                 property string currentTheme: "default"
                 property bool setWallpaperToThemeWallpaper: true
+                property bool blueSelectionBox: false
                 property JsonObject execCommands: JsonObject {
                     property string terminal: "kitty"
                     property string files: "nemo"
